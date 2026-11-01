@@ -57,6 +57,21 @@ def main():
         },
         timeout=900,
     )
+    report = result.get("report") if isinstance(result, dict) else None
+    if isinstance(report, dict):
+        details = report.get("details") or {}
+        raw_result = details.get("raw_result") or {}
+        summary = report.get("summary") or {}
+        if (
+            isinstance(raw_result, dict)
+            and not any(str(value).strip() for value in raw_result.values())
+            and summary.get("analysis_summary") == "待补充"
+        ):
+            raise RuntimeError(
+                "FinAgent returned a placeholder report; check LLM API balance and server logs"
+            )
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
@@ -66,4 +81,3 @@ if __name__ == "__main__":
     except (OSError, RuntimeError, ValueError) as error:
         print(str(error), file=sys.stderr)
         raise SystemExit(1)
-
